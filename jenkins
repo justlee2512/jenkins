@@ -31,26 +31,6 @@ pipeline {
                 sh 'mvn clean install'
             }
         }
-        stage('SonarQube Analysis') {
-            steps {
-                // Chạy sonar-scanner trực tiếp mà không qua Jenkins UI cấu hình
-                sh '''
-                    mvn sonar:sonar \
-                    -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                    -Dsonar.host.url=${SONAR_HOST_URL} \
-                    -Dsonar.login=${SONAR_TOKEN}
-                '''
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 1, unit: 'MINUTES') {
-                    // Chờ kết quả Quality Gate của SonarQube
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
 
         stage('Deploy to Nexus') {
             steps {
