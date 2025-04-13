@@ -27,12 +27,13 @@ pipeline {
 
         stage('Deploy to Nexus') {
             steps {
+                sh """ ls -la /target """
                 script {
                     // Sử dụng Maven deploy để đẩy WAR lên Nexus
                     withCredentials([usernamePassword(credentialsId: 'Nexus', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
                         sh """
                             mvn deploy:deploy-file \
-                            -Durl=http://192.168.2.59:8081/repository/maven-releases/ \
+                            -Durl=http://192.168.2.59:8081/repository/maven-releases \
                             -DrepositoryId=maven-releases \
                             -Dfile=target/heart-animation-0.0.1-SNAPSHOT \
                             -DgroupId=com.blackhat \
