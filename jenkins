@@ -31,7 +31,7 @@ pipeline {
                 sh 'mvn clean install'
             }
         }
-         stage('SonarQube Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 // Chạy sonar-scanner trực tiếp mà không qua Jenkins UI cấu hình
                 sh '''
