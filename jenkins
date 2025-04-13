@@ -2,14 +2,18 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven'  // Tên bạn đã cấu hình trong Global Tool Configuration
-        jdk 'JDK'      // Tên JDK đã cài nếu có, hoặc bỏ nếu không dùng
+        maven 'Maven'  // Tên đã cấu hình trong Global Tool Configuration
+        jdk 'JDK'      // Nếu không có, bạn có thể bỏ dòng này
     }
 
     environment {
-        // Đảm bảo đã cấu hình các thông tin về Nexus Repository tại đây
-        NEXUS_URL = 'http://192.168.2.59:8081/repository/maven-releases/'
-        NEXUS_CREDENTIALS = 'Nexus'  // Tên credentials được cấu hình trong Jenkins (username:password)
+        NEXUS_URL = 'my.nexus.address'  // Không cần /repository/... vì plugin sẽ tự ghép
+        NEXUS_CREDENTIALS = 'Nexus'     // ID của Jenkins credentials (username/password)
+        REPO_NAME = 'maven-releases'    // Tên repository trong Nexus
+        GROUP_ID = 'com.blackhat'
+        ARTIFACT_ID = 'heart-animation'
+        VERSION = '0.0.1'
+        FILE_NAME = "target/heart-animation-0.0.1.war"
     }
 
     stages {
@@ -27,27 +31,25 @@ pipeline {
 
         stage('Deploy to Nexus') {
             steps {
-                sh """ ls -la target """
-                script {
-                    // Sử dụng Maven deploy để đẩy WAR lên Nexus
-                    withCredentials([usernamePassword(credentialsId: 'dcec415a-61e0-47ae-b1ae-baa9060299f6', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
-                        sh """
-                            echo "Testing Nexus credentials..." \
-                            curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} ${NEXUS_URL} --head
-                            mvn deploy:deploy-file -X \
-                            -Durl=http://192.168.2.59:8081/repository/maven-releases/ \
-                            -DrepositoryId=maven-releases \
-                            -Dfile=target/heart-animation-0.0.1.war \
-                            -DgroupId=com.blackhat \
-                            -DartifactId=heart-animation \
-                            -Dversion=0.0.1 \
-                            -Dpackaging=war \
-                            -DgeneratePom=true \
-                            -Dusername=${NEXUS_USER} \
-                            -Dpassword=${NEXUS_PASSWORD}
-                        """
-                    }
-                }
+                sh "ls -la target"
+
+                nexusArtifactUploader(
+                    nexusVersion: 'nexus3',
+                    protocol: 'http',
+                    nexusUrl: "${NEXUS_URL}",
+                    groupId: "${GROUP_ID}",
+                    version: "${VERSION}",
+                    repository: "${REPO_NAME}",
+                    credentialsId: "${NEXUS_CREDENTIALS}",
+                    artifacts: [
+                        [
+                            artifactId: "${ARTIFACT_ID}",
+                            classifier: '',
+                            file: "${FILE_NAME}",
+                            type: 'war'
+                        ]
+                    ]
+                )
             }
         }
 
