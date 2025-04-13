@@ -30,7 +30,7 @@ pipeline {
                 sh """ ls -la target """
                 script {
                     // Sử dụng Maven deploy để đẩy WAR lên Nexus
-                    withCredentials([usernamePassword(credentialsId: 'Nexus', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: 'dcec415a-61e0-47ae-b1ae-baa9060299f6', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
                         sh """
                             echo "Testing Nexus credentials..." \
                             curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} ${NEXUS_URL} --head
