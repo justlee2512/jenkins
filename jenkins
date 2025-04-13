@@ -12,8 +12,6 @@ pipeline {
                 git credentialsId: 'f90900a0-dd27-4120-a986-56588c9c81c3', url: 'https://github.com/justlee2512/Heart.git', branch: 'main'
             }
         }
-    }
-
 
         stage('Build with Maven') {
             steps {
