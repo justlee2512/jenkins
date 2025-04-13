@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git credentialsId: 'f90900a0-dd27-4120-a986-56588c9c81c3', url: 'https://github.com/justlee2512/Heart.git', branch: 'main'
+                git credentialsId: 'f90900a0-dd27-4120-a986-56588c9c81c3', url: 'https://github.com/justlee2512/Heart.git', branch: 'master'
             }
         }
 
