@@ -29,11 +29,11 @@ pipeline {
             steps {
                 sh """ ls -la target """
                 script {
-                    echo "Testing Nexus credentials..."
-                    sh "curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} ${NEXUS_URL} --head"
                     // Sử dụng Maven deploy để đẩy WAR lên Nexus
                     withCredentials([usernamePassword(credentialsId: 'Nexus', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
                         sh """
+                            echo "Testing Nexus credentials..." \
+                            curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} ${NEXUS_URL} --head
                             mvn deploy:deploy-file \
                             -Durl=http://192.168.2.59:8081/repository/maven-releases/ \
                             -DrepositoryId=maven-releases \
