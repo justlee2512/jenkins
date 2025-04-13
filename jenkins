@@ -34,7 +34,7 @@ pipeline {
                         sh """
                             echo "Testing Nexus credentials..." \
                             curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} ${NEXUS_URL} --head
-                            mvn deploy:deploy-file -x \
+                            mvn deploy:deploy-file -X \
                             -Durl=http://192.168.2.59:8081/repository/maven-releases/ \
                             -DrepositoryId=maven-releases \
                             -Dfile=target/heart-animation-0.0.1.war \
