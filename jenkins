@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3.8.6'  // Tên bạn đã cấu hình trong Global Tool Configuration
-        jdk 'JDK11'         // Tên JDK đã cài nếu có, hoặc bỏ nếu không dùng
+        maven 'Maven'  // Tên bạn đã cấu hình trong Global Tool Configuration
+        jdk 'JDK'         // Tên JDK đã cài nếu có, hoặc bỏ nếu không dùng
     }
 
     stages {
