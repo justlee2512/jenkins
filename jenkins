@@ -35,7 +35,7 @@ pipeline {
                             mvn deploy:deploy-file \
                             -Durl=http://192.168.2.59:8081/repository/maven-releases/ \
                             -DrepositoryId=maven-releases \
-                            -Dfile=target/heart-animation-0.0.1-SNAPSHOT \
+                            -Dfile=target/heart-animation-0.0.1-SNAPSHOT.war \
                             -DgroupId=com.blackhat \
                             -DartifactId=heart-animation \
                             -Dversion=0.0.1 \
