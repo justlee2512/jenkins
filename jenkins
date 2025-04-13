@@ -8,8 +8,8 @@ pipeline {
 
     environment {
         // Đảm bảo đã cấu hình các thông tin về Nexus Repository tại đây
-        NEXUS_URL = 'https://nexus.example.com/repository/maven-releases/'
-        NEXUS_CREDENTIALS = 'nexus-credentials'  // Tên credentials được cấu hình trong Jenkins (username:password)
+        NEXUS_URL = 'http://192.168.2.59:8081/repository/maven-releases/'
+        NEXUS_CREDENTIALS = 'Nexus'  // Tên credentials được cấu hình trong Jenkins (username:password)
     }
 
     stages {
