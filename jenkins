@@ -41,8 +41,8 @@ pipeline {
                             -Dversion=0.0.1 \
                             -Dpackaging=war \
                             -DgeneratePom=true \
-                            -Dusername=admin \
-                            -Dpassword=Hsbc@123
+                            -Dusername=${NEXUS_USER} \
+                            -Dpassword=${NEXUS_PASSWORD}
                         """
                     }
                 }
