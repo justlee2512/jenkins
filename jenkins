@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        NEXUS_URL = 'my.nexus.address'  // Không cần /repository/... vì plugin sẽ tự ghép
+        NEXUS_URL = 'http://192.168.2.59:8081'  // Không cần /repository/... vì plugin sẽ tự ghép
         NEXUS_CREDENTIALS = 'Nexus'     // ID của Jenkins credentials (username/password)
         REPO_NAME = 'maven-releases'    // Tên repository trong Nexus
         GROUP_ID = 'com.blackhat'
