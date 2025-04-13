@@ -3,7 +3,13 @@ pipeline {
 
     tools {
         maven 'Maven'  // Tên bạn đã cấu hình trong Global Tool Configuration
-        jdk 'JDK'         // Tên JDK đã cài nếu có, hoặc bỏ nếu không dùng
+        jdk 'JDK'      // Tên JDK đã cài nếu có, hoặc bỏ nếu không dùng
+    }
+
+    environment {
+        // Đảm bảo đã cấu hình các thông tin về Nexus Repository tại đây
+        NEXUS_URL = 'https://nexus.example.com/repository/maven-releases/'
+        NEXUS_CREDENTIALS = 'nexus-credentials'  // Tên credentials được cấu hình trong Jenkins (username:password)
     }
 
     stages {
@@ -19,6 +25,29 @@ pipeline {
             }
         }
 
+        stage('Deploy to Nexus') {
+            steps {
+                script {
+                    // Sử dụng Maven deploy để đẩy WAR lên Nexus
+                    withCredentials([usernamePassword(credentialsId: 'Nexus', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
+                        sh """
+                            mvn deploy:deploy-file \
+                            -Durl=http://192.168.2.59:8081/#browse/browse:maven-releases \
+                            -DrepositoryId=maven-releases \
+                            -Dfile=target/heart-animation.war \
+                            -DgroupId=com.blackhat \
+                            -DartifactId=heart-animation \
+                            -Dversion=0.0.1 \
+                            -Dpackaging=war \
+                            -DgeneratePom=true \
+                            -Dusername=admin \
+                            -Dpassword=Hsbc@123
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Archive Artifacts') {
             steps {
                 archiveArtifacts artifacts: '**/target/*.war', fingerprint: true
@@ -28,7 +57,7 @@ pipeline {
 
     post {
         success {
-            echo 'Build completed successfully!'
+            echo 'Build completed successfully and WAR deployed to Nexus!'
         }
         failure {
             echo 'Build failed!'
