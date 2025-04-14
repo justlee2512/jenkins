@@ -7,14 +7,14 @@ pipeline {
     }
 
     environment {
-        NEXUS_URL = '192.168.2.59:8081'  // Không cần /repository/... vì plugin sẽ tự ghép
-        NEXUS_CREDENTIALS = 'dcec415a-61e0-47ae-b1ae-baa9060299f6'     // ID của Jenkins credentials (username/password)
+        NEXUS_URL = '192.168.2.83:8081'  // Không cần /repository/... vì plugin sẽ tự ghép
+        NEXUS_CREDENTIALS = 'Nexus'     // ID của Jenkins credentials (username/password)
         REPO_NAME = 'maven-releases'    // Tên repository trong Nexus
         GROUP_ID = 'com.blackhat'
         ARTIFACT_ID = 'heart-animation'
         VERSION = '0.0.1'
         FILE_NAME = "target/heart-animation-0.0.1.war"
-        SONAR_HOST_URL = 'http://192.168.2.59:9000/' // URL của SonarQube server
+        SONAR_HOST_URL = 'http://192.168.2.83:9000/' // URL của SonarQube server
         SONAR_TOKEN = credentials('SonarQube') // Dùng Jenkins credentials để lưu token an toàn
         SONAR_PROJECT_KEY = 'heart'     // Tên project trong SonarQube
     }
@@ -22,7 +22,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git credentialsId: 'f90900a0-dd27-4120-a986-56588c9c81c3', url: 'https://github.com/justlee2512/Heart.git', branch: 'master'
+                git credentialsId: 'Github', url: 'https://github.com/justlee2512/Heart.git', branch: 'master'
             }
         }
 
