@@ -14,9 +14,9 @@ pipeline {
         ARTIFACT_ID = 'heart-animation'
         VERSION = '0.0.1'
         FILE_NAME = "target/heart-animation-0.0.1.war"
-        SONAR_HOST_URL = 'http://192.168.2.83:9000/' // URL của SonarQube server
-        SONAR_TOKEN = credentials('SonarQube') // Dùng Jenkins credentials để lưu token an toàn
-        SONAR_PROJECT_KEY = 'heart'     // Tên project trong SonarQube
+        //SONAR_HOST_URL = 'http://192.168.2.83:9000/' // URL của SonarQube server
+        //SONAR_TOKEN = credentials('SonarQube') // Dùng Jenkins credentials để lưu token an toàn
+        //SONAR_PROJECT_KEY = 'heart'     // Tên project trong SonarQube
     }
 
     stages {
