@@ -114,7 +114,6 @@ pipeline {
             steps {
                 echo 'Cleaning up Docker images...'
                 sh """
-                docker image prune -f || true
                 docker rmi -f ${DOCKER_IMAGE} || true
                 docker rmi -f ${DOCKER_REGISTRY}/${DOCKER_IMAGE} || true
                 """
