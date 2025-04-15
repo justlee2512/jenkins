@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        NEXUS_URL = '192.168.2.83:8081'  // Không cần /repository/... vì plugin sẽ tự ghép
+        NEXUS_URL = '192.168.2.83:8081'  // URL của Nexus server
         NEXUS_CREDENTIALS = 'Nexus'     // ID của Jenkins credentials (username/password)
         REPO_NAME = 'maven-releases'    // Tên repository trong Nexus
         GROUP_ID = 'com.blackhat'
@@ -17,6 +17,7 @@ pipeline {
         SONAR_HOST_URL = 'http://192.168.2.83:9000/' // URL của SonarQube server
         SONAR_TOKEN = credentials('SonarQube') // Dùng Jenkins credentials để lưu token an toàn
         SONAR_PROJECT_KEY = 'heart'     // Tên project trong SonarQube
+        DOCKER_IMAGE = 'heart-animation:1.0'
     }
 
     stages {
@@ -67,6 +68,24 @@ pipeline {
             }
         }
 
+        stage('Build Docker Image') {
+            steps {
+                writeFile file: 'Dockerfile', text: """
+                FROM tomcat:9.0
+                COPY ${FILE_NAME} /usr/local/tomcat/webapps/
+                EXPOSE 8080
+                CMD ["catalina.sh", "run"]
+                """
+                sh "docker build -t ${DOCKER_IMAGE} ."
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                sh "docker run -d -p 8080:8080 --name heart-animation ${DOCKER_IMAGE}"
+            }
+        }
+
         stage('Archive Artifacts') {
             steps {
                 archiveArtifacts artifacts: '**/target/*.war', fingerprint: true
@@ -76,10 +95,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build completed successfully and WAR deployed to Nexus!'
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Pipeline failed!'
         }
     }
 }
