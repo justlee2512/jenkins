@@ -82,7 +82,7 @@ pipeline {
 
         stage('Run Docker Container') {
             steps {
-                sh "docker run -d -p 8080:8080 --name heart-animation ${DOCKER_IMAGE}"
+                sh "docker run -d -p 8085:8080 --name heart-animation ${DOCKER_IMAGE}"
             }
         }
 
