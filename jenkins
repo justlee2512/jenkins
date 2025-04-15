@@ -12,7 +12,7 @@ pipeline {
         REPO_NAME = 'maven-releases'    // Tên repository trong Nexus
         GROUP_ID = 'com.blackhat'
         ARTIFACT_ID = 'heart-animation'
-        VERSION = '0.0.1'
+        VERSION = '0.0.2'
         FILE_NAME = "target/heart-animation-0.0.1.war"
         //SONAR_HOST_URL = 'http://192.168.2.83:9000/' // URL của SonarQube server
         //SONAR_TOKEN = credentials('SonarQube') // Dùng Jenkins credentials để lưu token an toàn
