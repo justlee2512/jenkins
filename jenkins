@@ -32,6 +32,7 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 sh 'mvn clean install'
+                stash includes: 'target/heart-animation-0.0.1.war', name: 'war-file'
             }
         }
 
@@ -75,9 +76,10 @@ pipeline {
                 label 'docker-builder' // Label của server trung gian
             }
             steps {
+                unstash 'war-file'
                 writeFile file: 'Dockerfile', text: """
                 FROM tomcat:9.0
-                COPY ${FILE_NAME} /usr/local/tomcat/webapps/
+                COPY target/heart-animation-0.0.1.war /usr/local/tomcat/webapps/
                 EXPOSE 8080
                 CMD ["catalina.sh", "run"]
                 """
