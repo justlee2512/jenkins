@@ -111,13 +111,12 @@ pipeline {
             agent {
                 label 'docker-builder' // Chỉ định agent có Docker
             }
-            steps {
-                echo 'Cleaning up Docker images...'
-                sh """
-                docker rmi -f ${DOCKER_IMAGE} || true
-                docker rmi -f ${DOCKER_REGISTRY}/${DOCKER_IMAGE} || true
-                """
-            }
+            echo 'Cleaning up Docker images...'
+            sh """
+            docker image prune -f || true
+            docker rmi -f ${DOCKER_IMAGE} || true
+            docker rmi -f ${DOCKER_REGISTRY}/${DOCKER_IMAGE} || true
+            """
         }
         success {
             echo 'Pipeline completed successfully!'
