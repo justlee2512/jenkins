@@ -19,7 +19,6 @@ pipeline {
         SONAR_PROJECT_KEY = 'heart'     // Tên project trong SonarQube
         DOCKER_IMAGE = 'heart-animation:1.0'
         DOCKER_REGISTRY = '192.168.2.83:5000/docker' // URL của Nexus Docker Registry
-        DOCKER_TAG = 'latest'
     }
 
     stages {
@@ -85,7 +84,7 @@ pipeline {
                 """
                 sh """
                 docker build -t ${DOCKER_IMAGE} .
-                docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                // docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
                 """
             }
         }
@@ -112,7 +111,7 @@ pipeline {
             echo 'Cleaning up Docker images...'
             sh """
             docker rmi -f ${DOCKER_IMAGE} || true
-            docker rmi -f ${DOCKER_TAG}/${DOCKER_IMAGE} || true
+            docker rmi -f ${DOCKER_REGISTRY}/${DOCKER_IMAGE} || true
             """
         }
         success {
