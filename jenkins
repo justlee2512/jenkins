@@ -184,7 +184,7 @@ pipeline {
                         sh """
                         docker run --rm \
                             -v \$KUBECONFIG:/root/.kube/config \
-                            -v \$WORKSPACE:/workspace \  // Mount workspace chính xác
+                            -v \$WORKSPACE:/workspace \  
                             -w /workspace \
                             bitnami/kubectl:latest \
                             apply -f deployment.yaml
