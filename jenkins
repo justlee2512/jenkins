@@ -204,6 +204,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Read Deployment File') {
+            steps {
+                script {
+                    def deploymentContent = readFile 'deployment.yaml'
+                    echo "Content of deployment.yaml:\n${deploymentContent}"
+                }
+            }
+        }
     }
 
     post {
