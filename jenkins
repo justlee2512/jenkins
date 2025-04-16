@@ -176,7 +176,9 @@ pipeline {
                                     port:
                                       number: 8080
                         """
-
+                        sh """"
+                        cat deployment.yaml
+                        """
                         // Chạy container bitnami/kubectl:latest để deploy
                         sh """
                         docker run --rm \
