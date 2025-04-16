@@ -105,79 +105,91 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes with Docker Agent') {
+        stage('Generate Deployment File') {
+            steps {
+                writeFile file: 'deployment.yaml', text: """
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: heart-animation
+                  namespace: default
+                spec:
+                  replicas: 1
+                  selector:
+                    matchLabels:
+                      app: heart-animation
+                  template:
+                    metadata:
+                      labels:
+                        app: heart-animation
+                    spec:
+                      containers:
+                      - name: heart-animation
+                        image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                        ports:
+                        - containerPort: 8080
+                ---
+                apiVersion: v1
+                kind: Service
+                metadata:
+                  name: heart-animation-service
+                  namespace: default
+                spec:
+                  selector:
+                    app: heart-animation
+                  ports:
+                  - protocol: TCP
+                    port: 8080
+                    targetPort: 8080
+                  type: LoadBalancer
+                ---
+                apiVersion: networking.k8s.io/v1
+                kind: Ingress
+                metadata:
+                  name: heart-animation-ingress
+                  namespace: default
+                  annotations:
+                    nginx.ingress.kubernetes.io/rewrite-target: /
+                    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+                    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+                spec:
+                  tls:
+                  - hosts:
+                    - heart.blackhat
+                    secretName: heart-blackhat-tls
+                  rules:
+                  - host: heart.blackhat
+                    http:
+                      paths:
+                      - path: /
+                        pathType: Prefix
+                        backend:
+                          service:
+                            name: heart-animation-service
+                            port:
+                              number: 8080
+                """
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
             agent {
-                docker {
-                    image 'bitnami/kubectl:latest' // Image đã có sẵn kubectl
-                    args '-u root' // Nếu cần quyền ghi file (như writeFile)
-                }
+                label 'docker-builder' // Sử dụng agent docker-builder
             }
 
             steps {
-                withKubeConfig([credentialsId: 'k8s']) { // Kết nối tới cluster K8s
-                    writeFile file: 'deployment.yaml', text: """
-                    apiVersion: apps/v1
-                    kind: Deployment
-                    metadata:
-                      name: heart-animation
-                      namespace: default
-                    spec:
-                      replicas: 1
-                      selector:
-                        matchLabels:
-                          app: heart-animation
-                      template:
-                        metadata:
-                          labels:
-                            app: heart-animation
-                        spec:
-                          containers:
-                          - name: heart-animation
-                            image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
-                            ports:
-                            - containerPort: 8080
-                    ---
-                    apiVersion: v1
-                    kind: Service
-                    metadata:
-                      name: heart-animation-service
-                      namespace: default
-                    spec:
-                      selector:
-                        app: heart-animation
-                      ports:
-                      - protocol: TCP
-                        port: 8080
-                        targetPort: 8080
-                      type: LoadBalancer
-                    ---
-                    apiVersion: networking.k8s.io/v1
-                    kind: Ingress
-                    metadata:
-                      name: heart-animation-ingress
-                      namespace: default
-                      annotations:
-                        nginx.ingress.kubernetes.io/rewrite-target: /
-                        nginx.ingress.kubernetes.io/ssl-redirect: "true"
-                        cert-manager.io/cluster-issuer: "letsencrypt-prod"
-                    spec:
-                      tls:
-                      - hosts:
-                        - heart.blackhat
-                        secretName: heart-blackhat-tls
-                      rules:
-                      - host: heart.blackhat
-                        http:
-                          paths:
-                          - path: /
-                            pathType: Prefix
-                            backend:
-                              service:
-                                name: heart-animation-service
-                                port:
-                                  number: 8080
-                    """
-                    sh 'kubectl apply -f deployment.yaml'
+                withKubeConfig([credentialsId: 'k8s']) { // Lấy kubeconfig từ Jenkins credentials
+                    script {
+                        // Chạy container bitnami/kubectl:latest trên agent docker-builder
+                        sh """
+                        docker run --rm \
+                            -v \$KUBECONFIG:/root/.kube/config \  // Mount kubeconfig từ môi trường
+                            -v \$PWD:/workspace \                 // Mount workspace hiện tại
+                            -w /workspace \                      // Set working directory
+                            bitnami/kubectl:latest \
+                            sh -c "kubectl apply -f deployment.yaml"
+                        """
+                    }
                 }
             }
         }
