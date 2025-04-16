@@ -105,12 +105,16 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy to Kubernetes with Docker Agent') {
             agent {
-                label 'k8s-agent' // Label của Jenkins agent có quyền truy cập vào K8s cluster
+                docker {
+                    image 'bitnami/kubectl:latest' // Image đã có sẵn kubectl
+                    args '-u root' // Nếu cần quyền ghi file (như writeFile)
+                }
             }
+
             steps {
-                withKubeConfig([credentialsId: 'k8s']) { // Sử dụng Jenkins credentials để kết nối K8s
+                withKubeConfig([credentialsId: 'k8s']) { // Kết nối tới cluster K8s
                     writeFile file: 'deployment.yaml', text: """
                     apiVersion: apps/v1
                     kind: Deployment
@@ -155,7 +159,7 @@ pipeline {
                       annotations:
                         nginx.ingress.kubernetes.io/rewrite-target: /
                         nginx.ingress.kubernetes.io/ssl-redirect: "true"
-                        cert-manager.io/cluster-issuer: "letsencrypt-prod" // Sử dụng cert-manager để cấp SSL
+                        cert-manager.io/cluster-issuer: "letsencrypt-prod"
                     spec:
                       tls:
                       - hosts:
