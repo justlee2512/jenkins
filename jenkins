@@ -107,7 +107,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             agent {
-                label 'k8s-deployer' // Label của Jenkins agent có quyền truy cập Kubernetes
+                label 'docker-builder' // Label của Jenkins agent có quyền truy cập Kubernetes
             }
             steps {
                 writeFile file: 'deployment.yml', text: """
@@ -142,7 +142,27 @@ pipeline {
                   - protocol: TCP
                     port: 80
                     targetPort: 8080
-                  type: LoadBalancer
+                  type: ClusterIP
+                ---
+                apiVersion: networking.k8s.io/v1
+                kind: Ingress
+                metadata:
+                  name: heart-animation-ingress
+                  annotations:
+                    nginx.ingress.kubernetes.io/rewrite-target: /
+                    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+                spec:
+                  rules:
+                  - host: heart.blackhat
+                    http:
+                      paths:
+                      - path: /
+                        pathType: Prefix
+                        backend:
+                          service:
+                            name: heart-animation-service
+                            port:
+                              number: 8080
                 """
                 sh """
                 kubectl apply -f deployment.yml
