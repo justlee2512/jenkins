@@ -183,9 +183,9 @@ pipeline {
                         // Chạy container bitnami/kubectl:latest trên agent docker-builder
                         sh """
                         docker run --rm \
-                            -v \$KUBECONFIG:/root/.kube/config \  // Mount kubeconfig từ môi trường
-                            -v \$PWD:/workspace \                 // Mount workspace hiện tại
-                            -w /workspace \                      // Set working directory
+                            -v \$KUBECONFIG:/root/.kube/config \  
+                            -v \$PWD:/workspace \                 
+                            -w /workspace \                      
                             bitnami/kubectl:latest \
                             sh -c "kubectl apply -f deployment.yaml"
                         """
