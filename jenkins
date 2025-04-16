@@ -99,74 +99,27 @@ pipeline {
                     docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
                     docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
                     docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                    docker rmi -f ${DOCKER_IMAGE} || true
+                    docker rmi -f ${DOCKER_REGISTRY}/${DOCKER_IMAGE} || true
                     docker logout ${DOCKER_REGISTRY}
                     """
                 }
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Pull and Run Docker Image') {
             agent {
-                label 'docker-builder' // Label của Jenkins agent có quyền truy cập Kubernetes
+                label 'docker-builder' // Label của Jenkins agent có Docker
             }
             steps {
-                writeFile file: 'deployment.yml', text: """
-                apiVersion: apps/v1
-                kind: Deployment
-                metadata:
-                  name: heart-animation
-                spec:
-                  replicas: 2
-                  selector:
-                    matchLabels:
-                      app: heart-animation
-                  template:
-                    metadata:
-                      labels:
-                        app: heart-animation
-                    spec:
-                      containers:
-                      - name: heart-animation
-                        image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
-                        ports:
-                        - containerPort: 8080
-                ---
-                apiVersion: v1
-                kind: Service
-                metadata:
-                  name: heart-animation-service
-                spec:
-                  selector:
-                    app: heart-animation
-                  ports:
-                  - protocol: TCP
-                    port: 80
-                    targetPort: 8080
-                  type: ClusterIP
-                ---
-                apiVersion: networking.k8s.io/v1
-                kind: Ingress
-                metadata:
-                  name: heart-animation-ingress
-                  annotations:
-                    nginx.ingress.kubernetes.io/rewrite-target: /
-                    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-                spec:
-                  rules:
-                  - host: heart.blackhat
-                    http:
-                      paths:
-                      - path: /
-                        pathType: Prefix
-                        backend:
-                          service:
-                            name: heart-animation-service
-                            port:
-                              number: 8080
-                """
-                sh """
-                kubectl apply -f deployment.yml
-                """
+                withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh """
+                    docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
+                    docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                    docker run -d --name heart-container -p 8080:8080 ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                    docker logout ${DOCKER_REGISTRY}
+                    """
+                }
             }
         }
     }
