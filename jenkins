@@ -115,6 +115,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh """
                     docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
+                    docker rm -f --name heart-container || true
                     docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
                     docker run -d --name heart-container -p 8080:8080 ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
                     docker logout ${DOCKER_REGISTRY}
