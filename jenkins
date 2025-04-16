@@ -132,7 +132,7 @@ pipeline {
                             spec:
                               containers:
                               - name: heart-animation
-                                image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                                image: \${DOCKER_REGISTRY}/\${DOCKER_IMAGE}
                                 ports:
                                 - containerPort: 8080
                         ---
