@@ -107,7 +107,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             agent {
-                label any // Label của Jenkins agent có quyền truy cập vào K8s cluster
+                label 'k8s-agent' // Label của Jenkins agent có quyền truy cập vào K8s cluster
             }
             steps {
                 withKubeConfig([credentialsId: 'k8s']) { // Sử dụng Jenkins credentials để kết nối K8s
