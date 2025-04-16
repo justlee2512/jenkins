@@ -131,9 +131,7 @@ pipeline {
                     if (sh(script: 'command -v docker', returnStatus: true) == 0) {
                         echo 'Cleaning up Docker images...'
                         sh """
-                        docker image prune -f || true
-                        docker rmi -f ${DOCKER_IMAGE} || true
-                        docker rmi -f ${DOCKER_REGISTRY}/${DOCKER_IMAGE} || true
+                        ls -la 
                         """
                     } else {
                         echo 'Docker not found, skipping cleanup.'
