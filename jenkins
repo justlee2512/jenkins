@@ -184,6 +184,7 @@ pipeline {
                             -v \$WORKSPACE:/workspace \
                             -w /workspace \
                             bitnami/kubectl:latest \
+                            cat /workspace/deployment.yaml
                             apply -f /workspace/deployment.yaml
                         """
                     }
