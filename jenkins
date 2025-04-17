@@ -90,6 +90,32 @@ pipeline {
             }
         }
 
+        stage('Delete Old Docker Image') {
+            agent {
+                label 'docker-builder' // Label của Jenkins agent có Docker
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+                    script {
+                        def nexusApiUrl = "http://${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}"
+                        def deleteImages = sh(
+                            script: """
+                            curl -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} -X GET "${nexusApiUrl}" | \
+                            jq -r '.items[] | select(.name == "${ARTIFACT_ID}") | .id' | \
+                            xargs -I {} curl -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} -X DELETE "${nexusApiUrl}/{}"
+                            """,
+                            returnStatus: true
+                        )
+                        if (deleteImages != 0) {
+                            echo "No old Docker images found or failed to delete."
+                        } else {
+                            echo "Old Docker images deleted successfully from Nexus."
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Push Docker Image to Nexus') {
             agent {
                 label 'docker-builder' // Label của Jenkins agent có Docker
