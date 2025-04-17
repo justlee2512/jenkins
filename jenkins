@@ -105,7 +105,7 @@ pipeline {
                         def deleteImages = sh(
                             script: """
                             curl -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} -X GET "${nexusApiUrl}" | \
-                            jq -r '.items[] | select(.name == "${ARTIFACT_ID}") | .id' | \
+                            python3 -c "import sys, json; [print(item['id']) for item in json.load(sys.stdin)['items'] if item['name'] == '${ARTIFACT_ID}']" | \
                             xargs -I {} curl -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} -X DELETE "${nexusApiUrl}/{}"
                             """,
                             returnStatus: true
