@@ -31,6 +31,7 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 sh 'mvn clean install'
+                sh 'ls -la target' // List files in the target directory
                 stash includes: 'target/heart-animation-0.0.1.war', name: 'war-file'
             }
         }
