@@ -84,6 +84,10 @@ pipeline {
                 CMD ["catalina.sh", "run"]
                 """
                 sh """
+                docker rm -f heart-container || true
+                docker image prune -f 
+                docker ps -a 
+                docker images 
                 docker build -t ${DOCKER_IMAGE} .
                 docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
                 """
@@ -126,9 +130,6 @@ pipeline {
                     docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
                     docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
                     docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
-                    docker rm -f heart-container || true
-                    docker image prune -f 
-                    docker ps -a 
                     docker images 
                     docker logout ${DOCKER_REGISTRY}
                     """
