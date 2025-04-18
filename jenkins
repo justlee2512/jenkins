@@ -190,21 +190,21 @@ pipeline {
             }
         }
         
-        stage('Create Nexus Secret in Kubernetes') {
+        stage('Deploy Kubernetes Resources') {
             agent {
-                label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
+                label 'docker-builder' // Label of Jenkins agent with Docker and kubectl
             }
             steps {
-                withKubeConfig([credentialsId: 'k8s']) { // Sử dụng Jenkins credentials để lưu kubeconfig
-                    withCredentials([usernamePassword(credentialsId: "${Github}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+                withKubeConfig([credentialsId: 'k8s']) {
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
                         sh """
-                        cd /home/tuan/{$artifactId}
+                        cd /home/tuan/${ARTIFACT_ID}
                         kubectl delete -f deployment.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f service.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
-                        rm -rf /home/tuan/{$artifactId} || true
-                        git clone https://github.com/justlee2512/kubernetes-deployment.git /home/tuan/{$artifactId}
-                        cd /home/tuan/{$artifactId}
+                        rm -rf /home/tuan/${ARTIFACT_ID} || true
+                        git clone https://github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
+                        cd /home/tuan/${ARTIFACT_ID}
                         kubectl apply -f deployment.yaml
                         kubectl apply -f service.yaml
                         kubectl apply -f ingress.yaml
