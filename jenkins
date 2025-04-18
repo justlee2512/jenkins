@@ -182,16 +182,16 @@ pipeline {
                     """
                 }
                 withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'SECRET_USERNAME', passwordVariable: 'SECRET_PASSWORD')]) {
-                    sh """
+                    sh(script: """
                     if ! kubectl get secret jenkins-secret --namespace=${K8S_NAMESPACE}; then
                         kubectl create secret generic jenkins-secret \
                             --from-literal=username=${SECRET_USERNAME} \
                             --from-literal=password=${SECRET_PASSWORD} \
-                            --namespace=${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+                            --namespace=${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f - --validate=false
                     else
                         echo "Secret 'jenkins-secret' already exists in namespace '${K8S_NAMESPACE}', skipping creation."
                     fi
-                    """
+                    """)
                 }
             }
         }
