@@ -198,7 +198,7 @@ pipeline {
                 withKubeConfig([credentialsId: 'k8s']) {
                     withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
                         sh """
-                        cd /home/tuan/${ARTIFACT_ID}
+                        cd /home/tuan/${ARTIFACT_ID} || true
                         kubectl delete -f deployment.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f service.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
