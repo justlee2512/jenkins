@@ -159,10 +159,12 @@ pipeline {
                 label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
             }
             steps {
-                sh """
-                kubectl cluster-info
-                kubectl get nodes
-                """
+                withCredentials([kubeconfigFile(credentialsId: 'k8s')]) { // Sử dụng Jenkins credentials để lưu kubeconfig
+                    sh """
+                    kubectl cluster-info
+                    kubectl get nodes
+                    """
+                }
             }
         }
     }
