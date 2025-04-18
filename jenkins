@@ -181,7 +181,7 @@ pipeline {
                     kubectl create namespace ${K8S_NAMESPACE} || true
                     """
                 }
-                withCredentials([usernamePassword(credentialsId: 'k8s-secret', usernameVariable: 'SECRET_USERNAME', passwordVariable: 'SECRET_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'SECRET_USERNAME', passwordVariable: 'SECRET_PASSWORD')]) {
                     sh """
                     if ! kubectl get secret jenkins-secret --namespace=${K8S_NAMESPACE}; then
                         kubectl create secret generic jenkins-secret \
