@@ -178,7 +178,7 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
                         sh """
                         kubectl create namespace ${K8S_NAMESPACE} || true
-                        kubectl delete secrets jenkins-secret --namespace=${K8S_NAMESPACE} || true                        
+                        kubectl delete secrets nexus-docker-secret --namespace=${K8S_NAMESPACE} || true                        
                         kubectl create secret docker-registry nexus-docker-secret \
                             --docker-server=${DOCKER_REGISTRY} \
                             --docker-username=${NEXUS_USERNAME} \
