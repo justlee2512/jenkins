@@ -205,6 +205,7 @@ pipeline {
                         rm -rf /home/tuan/${ARTIFACT_ID} || true
                         git clone https://github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
                         cd /home/tuan/${ARTIFACT_ID}
+                        ll /home/tuan/${ARTIFACT_ID}
                         kubectl apply -f deployment.yaml
                         kubectl apply -f service.yaml
                         kubectl apply -f ingress.yaml
