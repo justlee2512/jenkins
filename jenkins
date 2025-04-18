@@ -159,11 +159,10 @@ pipeline {
                 label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
             }
             steps {
-                    sh """
-                    kubectl cluster-info
-                    kubectl get nodes
-                    """
-                }
+                sh """
+                kubectl cluster-info
+                kubectl get nodes
+                """
             }
         }
     }
