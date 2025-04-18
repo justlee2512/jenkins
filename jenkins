@@ -196,16 +196,14 @@ pipeline {
             }
             steps {
                 withKubeConfig([credentialsId: 'k8s']) {
-                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: 'Github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                         sh """
-                        cd /home/tuan/${ARTIFACT_ID} || true
                         kubectl delete -f deployment.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f service.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
                         rm -rf /home/tuan/${ARTIFACT_ID} || true
-                        git clone https://github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
+                        git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
                         cd /home/tuan/${ARTIFACT_ID}
-                        ll /home/tuan/${ARTIFACT_ID}
                         kubectl apply -f deployment.yaml
                         kubectl apply -f service.yaml
                         kubectl apply -f ingress.yaml
