@@ -189,6 +189,30 @@ pipeline {
                 }
             }
         }
+        
+        stage('Create Nexus Secret in Kubernetes') {
+            agent {
+                label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
+            }
+            steps {
+                withKubeConfig([credentialsId: 'k8s']) { // Sử dụng Jenkins credentials để lưu kubeconfig
+                    withCredentials([usernamePassword(credentialsId: "${Github}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+                        sh """
+                        cd /home/tuan/{$artifactId}
+                        kubectl delete -f deployment.yaml --namespace=${K8S_NAMESPACE} || true
+                        kubectl delete -f service.yaml --namespace=${K8S_NAMESPACE} || true
+                        kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
+                        rm -rf /home/tuan/{$artifactId} || true
+                        git clone https://github.com/justlee2512/kubernetes-deployment.git /home/tuan/{$artifactId}
+                        cd /home/tuan/{$artifactId}
+                        kubectl apply -f deployment.yaml
+                        kubectl apply -f service.yaml
+                        kubectl apply -f ingress.yaml
+                        """
+                    }
+                }
+            }
+        }
     }
 
     post {
