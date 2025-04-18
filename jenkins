@@ -180,6 +180,7 @@ pipeline {
                         kubectl cluster-info
                         kubectl get nodes
                         kubectl create namespace ${K8S_NAMESPACE} || true
+                        k delete secrets jenkins-secret --namespace=${K8S_NAMESPACE} || true
                         
                         if ! kubectl get secret jenkins-secret --namespace=${K8S_NAMESPACE}; then
                             kubectl create secret generic jenkins-secret \
@@ -189,6 +190,27 @@ pipeline {
                         else
                             echo "Secret 'jenkins-secret' already exists in namespace '${K8S_NAMESPACE}', skipping creation."
                         fi
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Create Nexus Secret in Kubernetes') {
+            agent {
+                label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
+            }
+            steps {
+                withKubeConfig([credentialsId: 'k8s']) { // Sử dụng Jenkins credentials để lưu kubeconfig
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+                        sh """
+                        kubectl create namespace ${K8S_NAMESPACE} || true
+                        kubectl delete secrets jenkins-secret --namespace=${K8S_NAMESPACE} || true                        
+                        kubectl create secret docker-registry nexus-docker-secret \
+                            --docker-server=${DOCKER_REGISTRY} \
+                            --docker-username=${NEXUS_USERNAME} \
+                            --docker-password=${NEXUS_PASSWORD} \
+                            --namespace=${K8S_NAMESPACE}
                         """
                     }
                 }
