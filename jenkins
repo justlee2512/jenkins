@@ -17,6 +17,12 @@ pipeline {
     }
 
     stages {
+        stage('Checkout Code') {
+            steps {
+                git credentialsId: 'Github', url: 'https://github.com/justlee2512/Heart.git', branch: 'master'
+            }
+        }
+
         stage('Read POM Information') {
             steps {
                 script {
@@ -34,12 +40,6 @@ pipeline {
                 echo "FILE_NAME: ${env.FILE_NAME}"
                 echo "DOCKER_IMAGE: ${env.DOCKER_IMAGE}"
                 echo "K8S_NAMESPACE: ${env.K8S_NAMESPACE}"
-            }
-        }
-
-        stage('Checkout Code') {
-            steps {
-                git credentialsId: 'Github', url: 'https://github.com/justlee2512/Heart.git', branch: 'master'
             }
         }
 
