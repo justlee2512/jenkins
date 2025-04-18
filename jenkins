@@ -175,23 +175,22 @@ pipeline {
             }
             steps {
                 withKubeConfig([credentialsId: 'k8s']) { // Sử dụng Jenkins credentials để lưu kubeconfig
-                    sh """
-                    kubectl cluster-info
-                    kubectl get nodes
-                    kubectl create namespace ${K8S_NAMESPACE} || true
-                    """
-                }
-                withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'SECRET_USERNAME', passwordVariable: 'SECRET_PASSWORD')]) {
-                    sh(script: """
-                    if ! kubectl get secret jenkins-secret --namespace=${K8S_NAMESPACE}; then
-                        kubectl create secret generic jenkins-secret \
-                            --from-literal=username=${SECRET_USERNAME} \
-                            --from-literal=password=${SECRET_PASSWORD} \
-                            --namespace=${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f - --validate=false
-                    else
-                        echo "Secret 'jenkins-secret' already exists in namespace '${K8S_NAMESPACE}', skipping creation."
-                    fi
-                    """)
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'SECRET_USERNAME', passwordVariable: 'SECRET_PASSWORD')]) {
+                        sh """
+                        kubectl cluster-info
+                        kubectl get nodes
+                        kubectl create namespace ${K8S_NAMESPACE} || true
+                        
+                        if ! kubectl get secret jenkins-secret --namespace=${K8S_NAMESPACE}; then
+                            kubectl create secret generic jenkins-secret \
+                                --from-literal=username=${SECRET_USERNAME} \
+                                --from-literal=password=${SECRET_PASSWORD} \
+                                --namespace=${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f - --validate=false
+                        else
+                            echo "Secret 'jenkins-secret' already exists in namespace '${K8S_NAMESPACE}', skipping creation."
+                        fi
+                        """
+                    }
                 }
             }
         }
