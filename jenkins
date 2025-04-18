@@ -204,7 +204,7 @@ pipeline {
                         kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
                         rm -rf /home/tuan/${ARTIFACT_ID} || true
                         git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
-                        ll /home/tuan/
+                        ls -la /home/tuan/
                         cd /home/tuan/${ARTIFACT_ID}/manifests
                         kubectl apply -f deployment.yaml
                         kubectl apply -f service.yaml
