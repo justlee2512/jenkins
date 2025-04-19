@@ -190,7 +190,7 @@ pipeline {
             }
         }
         
-        stage('Deploy Kubernetes Resources') {
+        stage('reset old pod') {
             agent {
                 label 'docker-builder' // Label of Jenkins agent with Docker and kubectl
             }
@@ -202,7 +202,44 @@ pipeline {
                         kubectl delete -f deployment.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f service.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
-                        rm -rf /home/tuan/${ARTIFACT_ID} || true
+                        rm -rf /home/tuan/${ARTIFACT_ID}/* || true
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Cleanup Unused Docker Images on All Nodes') {
+            agent {
+                label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
+            }
+            steps {
+                withKubeConfig([credentialsId: 'k8s']) {
+                    script {
+                        def nodes = sh(
+                            script: "kubectl get nodes -o jsonpath='{.items[*].metadata.name}'",
+                            returnStdout: true
+                        ).trim().split(' ')
+                        
+                        nodes.each { node ->
+                            echo "Cleaning up unused Docker images on node: ${node}"
+                            sh """
+                            kubectl debug node/${node} --image=busybox -- chroot /host sh -c "docker image prune -af"
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Kubernetes Resources') {
+            agent {
+                label 'docker-builder' // Label of Jenkins agent with Docker and kubectl
+            }
+            steps {
+                withKubeConfig([credentialsId: 'k8s']) {
+                    withCredentials([usernamePassword(credentialsId: 'Github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                        sh """
                         git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
                         ls -la /home/tuan/
                         cd /home/tuan/${ARTIFACT_ID}/manifests
@@ -214,6 +251,8 @@ pipeline {
                 }
             }
         }
+
+        
     }
 
     post {
