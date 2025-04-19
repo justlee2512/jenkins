@@ -202,7 +202,7 @@ pipeline {
                         kubectl delete -f deployment.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f service.yaml --namespace=${K8S_NAMESPACE} || true
                         kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
-                        rm -rf /home/tuan/${ARTIFACT_ID}/* || true
+                        rm -rf /home/tuan/${ARTIFACT_ID} || true
                         """
                     }
                 }
