@@ -190,7 +190,7 @@ pipeline {
             }
         }
         
-        stage('reset old pod') {
+        stage('Delete Old Pods') {
             agent {
                 label 'docker-builder' // Label of Jenkins agent with Docker and kubectl
             }
