@@ -273,6 +273,13 @@ pipeline {
                         echo 'Docker not found, skipping cleanup.'
                     }
                 }
+                env.GROUP_ID = ""
+                env.ARTIFACT_ID = ""
+                env.VERSION = ""
+                env.FILE_NAME = ""
+                env.DOCKER_IMAGE = ""
+                env.K8S_NAMESPACE = ""
+                echo "POM environment variables cleaned."
             }
         }
         success {
