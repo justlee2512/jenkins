@@ -214,6 +214,13 @@ pipeline {
             }
         }
 
+        stage('Clean All POM Files') {
+            steps {
+                echo 'Cleaning all pom.xml files in Jenkins workspace...'
+                sh 'find $WORKSPACE -name "pom.xml" -exec rm -f {} +'
+            }
+        }
+
         stage('Cleanup Unused Docker Images on All Nodes') {
             agent {
                 label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
