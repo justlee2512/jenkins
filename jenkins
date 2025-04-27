@@ -40,9 +40,9 @@ pipeline {
             steps {
                 script {
                     def pom = readMavenPom file: 'pom.xml'
-                    env.GROUP_ID = pom.groupId
-                    env.ARTIFACT_ID = pom.artifactId
-                    env.VERSION = pom.version
+                    env.GROUP_ID = "${pom.groupId}"
+                    env.ARTIFACT_ID = "${pom.artifactId}"
+                    env.VERSION = "${pom.version}"
                     env.FILE_NAME = "target/${pom.artifactId}-${pom.version}.war"
                     env.DOCKER_IMAGE = "${pom.artifactId}:${pom.version}"
                     env.K8S_NAMESPACE = "${pom.artifactId}"
