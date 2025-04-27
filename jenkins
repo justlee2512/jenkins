@@ -19,14 +19,6 @@ pipeline {
         SONAR_PROJECT_KEY = 'heart'
         DOCKER_REGISTRY = '192.168.2.83:5000/docker'
         GIT_HUB_URL = "${params.GITHUB_REPO}"
-
-        // Đặt các biến này thành rỗng khi bắt đầu pipeline
-        GROUP_ID = ''
-        ARTIFACT_ID = ''
-        VERSION = ''
-        FILE_NAME = ''
-        DOCKER_IMAGE = ''
-        K8S_NAMESPACE = ''
     }
 
     stages {
