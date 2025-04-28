@@ -1,3 +1,11 @@
+node('cm-linux') {
+    env.GROUP_ID = null
+    env.ARTIFACT_ID = null
+    env.VERSION = null
+    env.FILE_NAME = null
+    env.DOCKER_IMAGE = null
+    env.K8S_NAMESPACE = null
+}
 pipeline {
     agent any
 
