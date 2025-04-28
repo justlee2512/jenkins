@@ -1,11 +1,3 @@
-node('cm-linux') {
-    env.GROUP_ID = null
-    env.ARTIFACT_ID = null
-    env.VERSION = null
-    env.FILE_NAME = null
-    env.DOCKER_IMAGE = null
-    env.K8S_NAMESPACE = null
-}
 pipeline {
     agent any
 
@@ -47,38 +39,40 @@ pipeline {
                     env.DOCKER_IMAGE = "${pom.artifactId}:${pom.version}"
                     env.K8S_NAMESPACE = "${pom.artifactId}"
                 }
-                echo "GROUP_ID: ${env.GROUP_ID}"
-                echo "ARTIFACT_ID: ${env.ARTIFACT_ID}"
-                echo "VERSION: ${env.VERSION}"
-                echo "FILE_NAME: ${env.FILE_NAME}"
-                echo "DOCKER_IMAGE: ${env.DOCKER_IMAGE}"
-                echo "K8S_NAMESPACE: ${env.K8S_NAMESPACE}"
+                echo """
+                GROUP_ID: ${env.GROUP_ID}
+                ARTIFACT_ID: ${env.ARTIFACT_ID}
+                VERSION: ${env.VERSION}
+                FILE_NAME: ${env.FILE_NAME}
+                DOCKER_IMAGE: ${env.DOCKER_IMAGE}
+                K8S_NAMESPACE: ${env.K8S_NAMESPACE}
+                """
             }
         }
 
         stage('Build with Maven') {
             steps {
                 sh 'mvn clean install'
-                sh 'ls -la target' // List files in the target directory
+                sh 'ls -la target'
                 stash includes: "${env.FILE_NAME}", name: 'war-file'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') { // 'SonarQube' là tên server cấu hình trong Jenkins
-                    sh 'mvn sonar:sonar ' +
-                       '-Dsonar.projectKey=${SONAR_PROJECT_KEY} ' +
-                       '-Dsonar.host.url=${SONAR_HOST_URL} ' +
-                       '-Dsonar.login=${SONAR_TOKEN}'
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                        -Dsonar.host.url=${SONAR_HOST_URL} \
+                        -Dsonar.login=${SONAR_TOKEN}
+                    '''
                 }
             }
         }
 
         stage('Deploy WAR to Nexus') {
             steps {
-                sh "ls -la target"
-
                 nexusArtifactUploader(
                     nexusVersion: 'nexus3',
                     protocol: 'http',
@@ -99,133 +93,101 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image on Jenkins Agent') {
-            agent {
-                label 'docker-builder' // Label của Jenkins agent có Docker
-            }
+        stage('Build Docker Image') {
+            agent { label 'docker-builder' }
             steps {
-                unstash 'war-file' // Lấy file WAR từ master
+                unstash 'war-file'
                 writeFile file: 'Dockerfile', text: """
-                FROM tomcat:10.1-jdk17
-                COPY target/${ARTIFACT_ID}-${VERSION}.war /usr/local/tomcat/webapps/
-                EXPOSE 8080
-                CMD ["catalina.sh", "run"]
+                    FROM tomcat:10.1-jdk17
+                    COPY target/${ARTIFACT_ID}-${VERSION}.war /usr/local/tomcat/webapps/
+                    EXPOSE 8080
+                    CMD ["catalina.sh", "run"]
                 """
                 sh """
-                docker rm -f ${ARTIFACT_ID}-container || true
-                docker image prune -f 
-                docker ps -a 
-                docker images 
-                docker build -t ${DOCKER_IMAGE} .
-                docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                    docker rm -f ${ARTIFACT_ID}-container || true
+                    docker image prune -f || true
+                    docker build -t ${DOCKER_IMAGE} .
+                    docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
                 """
             }
         }
 
-        stage('Delete Old Docker Image') {
-            agent {
-                label 'docker-builder' // Label của Jenkins agent có Docker
-            }
+        stage('Delete Old Docker Images') {
+            agent { label 'docker-builder' }
             steps {
                 withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
-                    script {
-                        def nexusApiUrl = "http://${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}"
-                        def deleteImages = sh(
-                            script: """
-                            curl -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} -X GET "${nexusApiUrl}" | \
-                            python3 -c "import sys, json; [print(item['id']) for item in json.load(sys.stdin)['items'] if item['name'] == '${ARTIFACT_ID}']" | \
-                            xargs -I {} curl -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} -X DELETE "${nexusApiUrl}/{}"
-                            """,
-                            returnStatus: true
-                        )
-                        if (deleteImages != 0) {
-                            echo "No old Docker images found or failed to delete."
-                        } else {
-                            echo "Old Docker images deleted successfully from Nexus."
-                        }
-                    }
+                    sh """
+                        curl -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} -X GET "http://${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" | \
+                        python3 -c "import sys, json; [print(item['id']) for item in json.load(sys.stdin)['items'] if item['name'] == '${ARTIFACT_ID}']" | \
+                        xargs -I {} curl -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} -X DELETE "http://${NEXUS_URL}/service/rest/v1/components/{}"
+                    """                    
                 }
             }
         }
 
         stage('Push Docker Image to Nexus') {
-            agent {
-                label 'docker-builder' // Label của Jenkins agent có Docker
-            }
+            agent { label 'docker-builder' }
             steps {
                 withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh """
-                    docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
-                    docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
-                    docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
-                    docker image prune -f 
-                    docker images 
-                    docker logout ${DOCKER_REGISTRY}
+                        docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
+                        docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                        docker logout ${DOCKER_REGISTRY}
                     """
                 }
             }
         }
 
         stage('Pull and Run Docker Image') {
-            agent {
-                label 'docker-builder' // Label của Jenkins agent có Docker
-            }
+            agent { label 'docker-builder' }
             steps {
                 withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh """
-                    docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
-                    docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
-                    docker run -d --name ${ARTIFACT_ID}-container -p 8080:8080 ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
-                    docker logout ${DOCKER_REGISTRY}
+                        docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
+                        docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                        docker run -d --name ${ARTIFACT_ID}-container -p 8080:8080 ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                        docker logout ${DOCKER_REGISTRY}
                     """
                 }
             }
         }
 
         stage('Create Nexus Secret in Kubernetes') {
-            agent {
-                label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
-            }
-            steps {
-                withKubeConfig([credentialsId: 'k8s']) { // Sử dụng Jenkins credentials để lưu kubeconfig
-                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
-                        sh """
-                        kubectl create namespace ${K8S_NAMESPACE} || true
-                        kubectl delete secrets nexus-docker-secret --namespace=${K8S_NAMESPACE} || true                        
-                        kubectl create secret docker-registry nexus-docker-secret \
-                            --docker-server=${DOCKER_REGISTRY} \
-                            --docker-username=${NEXUS_USERNAME} \
-                            --docker-password=${NEXUS_PASSWORD} \
-                            --namespace=${K8S_NAMESPACE}
-                        """
-                    }
-                }
-            }
-        }
-        
-        stage('Delete Old Pods') {
-            agent {
-                label 'docker-builder' // Label of Jenkins agent with Docker and kubectl
-            }
+            agent { label 'docker-builder' }
             steps {
                 withKubeConfig([credentialsId: 'k8s']) {
-                    withCredentials([usernamePassword(credentialsId: 'Github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIALS}", usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
                         sh """
-                        cd /home/tuan/${ARTIFACT_ID}/manifests || true
-                        kubectl delete -f deployment.yaml --namespace=${K8S_NAMESPACE} || true
-                        kubectl delete -f service.yaml --namespace=${K8S_NAMESPACE} || true
-                        kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
-                        rm -rf /home/tuan/${ARTIFACT_ID} || true
+                            kubectl create namespace ${K8S_NAMESPACE} || true
+                            kubectl delete secret nexus-docker-secret --namespace=${K8S_NAMESPACE} || true
+                            kubectl create secret docker-registry nexus-docker-secret \
+                                --docker-server=${DOCKER_REGISTRY} \
+                                --docker-username=${NEXUS_USERNAME} \
+                                --docker-password=${NEXUS_PASSWORD} \
+                                --namespace=${K8S_NAMESPACE}
                         """
                     }
                 }
             }
         }
 
-        stage('Cleanup Unused Docker Images on All Nodes') {
-            agent {
-                label 'docker-builder' // Label của Jenkins agent có Docker và kubectl
+        stage('Delete Old Kubernetes Pods') {
+            agent { label 'docker-builder' }
+            steps {
+                withKubeConfig([credentialsId: 'k8s']) {
+                    sh """
+                        cd /home/tuan/${ARTIFACT_ID}/manifests || true
+                        kubectl delete -f deployment.yaml --namespace=${K8S_NAMESPACE} || true
+                        kubectl delete -f service.yaml --namespace=${K8S_NAMESPACE} || true
+                        kubectl delete -f ingress.yaml --namespace=${K8S_NAMESPACE} || true
+                        rm -rf /home/tuan/${ARTIFACT_ID} || true
+                    """
+                }
             }
+        }
+
+        stage('Cleanup Docker Images on All Nodes') {
+            agent { label 'docker-builder' }
             steps {
                 withKubeConfig([credentialsId: 'k8s']) {
                     script {
@@ -233,11 +195,10 @@ pipeline {
                             script: "kubectl get nodes -o jsonpath='{.items[*].metadata.name}'",
                             returnStdout: true
                         ).trim().split(' ')
-                        
                         nodes.each { node ->
-                            echo "Cleaning up unused Docker images on node: ${node}"
+                            echo "Cleaning Docker images on node: ${node}"
                             sh """
-                            kubectl debug node/${node} --image=busybox -- chroot /host sh -c "docker image prune -af"
+                                kubectl debug node/${node} --image=busybox -- chroot /host sh -c "docker image prune -af"
                             """
                         }
                     }
@@ -246,57 +207,62 @@ pipeline {
         }
 
         stage('Deploy Kubernetes Resources') {
-            agent {
-                label 'docker-builder' // Label of Jenkins agent with Docker and kubectl
-            }
+            agent { label 'docker-builder' }
             steps {
                 withKubeConfig([credentialsId: 'k8s']) {
                     withCredentials([usernamePassword(credentialsId: 'Github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                         sh """
-                        git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
-                        ls -la /home/tuan/
-                        cd /home/tuan/${ARTIFACT_ID}/manifests
-                        kubectl apply -f deployment.yaml
-                        kubectl apply -f service.yaml
-                        kubectl apply -f ingress.yaml
+                            git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
+                            cd /home/tuan/${ARTIFACT_ID}/manifests
+                            kubectl apply -f deployment.yaml
+                            kubectl apply -f service.yaml
+                            kubectl apply -f ingress.yaml
                         """
                     }
                 }
             }
         }
 
+        stage('Cleanup') {
+            agent { label 'docker-builder' }
+            steps {
+                script {
+                    echo "Starting final Cleanup..."
 
+                    if (sh(script: 'command -v docker', returnStatus: true) == 0) {
+                        sh """
+                            docker container prune -f || true
+                            docker image prune -af || true
+                        """
+                        echo "Docker cleanup done."
+                    }
+
+                    if (env.ARTIFACT_ID) {
+                        sh "rm -rf /home/tuan/${ARTIFACT_ID} || true"
+                        echo "/home/tuan/${ARTIFACT_ID} deleted."
+                    }
+
+                    env.GROUP_ID = ""
+                    env.ARTIFACT_ID = ""
+                    env.VERSION = ""
+                    env.FILE_NAME = ""
+                    env.DOCKER_IMAGE = ""
+                    env.K8S_NAMESPACE = ""
+                    env.SONAR_TOKEN = ""
+                    
+                    deleteDir()
+                    echo "Workspace cleaned and environment reset."
+                }
+            }
+        }
     }
 
     post {
-        always {
-            script {
-                node('docker-builder') {
-                    if (sh(script: 'command -v docker', returnStatus: true) == 0) {
-                        echo 'Cleaning up Docker images...'
-                        sh """
-                        ls -la 
-                        """
-                    } else {
-                        echo 'Docker not found, skipping cleanup.'
-                    }
-                }
-                env.GROUP_ID = ""
-                env.ARTIFACT_ID = ""
-                env.VERSION = ""
-                env.FILE_NAME = ""
-                env.DOCKER_IMAGE = ""
-                env.K8S_NAMESPACE = ""
-                echo "POM environment variables cleaned."
-            }
-        }
         success {
-            echo 'Pipeline completed successfully!'
-            echo 'Docker image uploaded to Nexus successfully!'
+            echo '✅ Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed!'
-            echo 'Failed to upload Docker image to Nexus.'
+            echo '❌ Pipeline failed!'
         }
     }
 }
