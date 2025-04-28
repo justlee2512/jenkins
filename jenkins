@@ -54,6 +54,7 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
+                sh 'rm -f target/*.war || true' // Xoá hết các file war cũ
                 sh 'mvn clean install'
                 sh 'ls -la target'
                 stash includes: "${env.FILE_NAME}", name: 'war-file'
