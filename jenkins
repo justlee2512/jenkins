@@ -241,11 +241,6 @@ pipeline {
                         echo "Docker cleanup done."
                     }
 
-                    if (env.ARTIFACT_ID) {
-                        sh "rm -rf /home/tuan/${ARTIFACT_ID} || true"
-                        echo "/home/tuan/${ARTIFACT_ID} deleted."
-                    }
-
                     env.GROUP_ID = ""
                     env.ARTIFACT_ID = ""
                     env.VERSION = ""
