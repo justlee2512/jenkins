@@ -148,7 +148,7 @@ pipeline {
                     sh """
                         docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}
                         docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
-                        docker run -d --name ${ARTIFACT_ID}-container -p 8080:8080 ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+                        docker run -d --name ${ARTIFACT_ID}-container -p ${PORT}:${PORT} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
                         docker logout ${DOCKER_REGISTRY}
                     """
                 }
