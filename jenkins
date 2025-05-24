@@ -215,7 +215,7 @@ pipeline {
                 withKubeConfig([credentialsId: 'k8s']) {
                     withCredentials([usernamePassword(credentialsId: 'Github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                         sh """
-                            git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/justlee2512/kubernetes-deployment.git /home/tuan/${ARTIFACT_ID}
+                            git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@${{Manifests}} /home/tuan/${ARTIFACT_ID}
                             cd /home/tuan/${ARTIFACT_ID}/manifests
                             kubectl apply -f deployment.yaml
                             kubectl apply -f service.yaml
