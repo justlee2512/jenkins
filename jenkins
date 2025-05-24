@@ -103,7 +103,7 @@ pipeline {
                 writeFile file: 'Dockerfile', text: """
                     FROM tomcat:10.1-jdk17
                     COPY target/${ARTIFACT_ID}-${VERSION}.war /usr/local/tomcat/webapps/
-                    EXPOSE 8080
+                    EXPOSE ${PORT}
                     CMD ["catalina.sh", "run"]
                 """
                 sh """
