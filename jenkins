@@ -104,6 +104,7 @@ pipeline {
                     FROM tomcat:10.1-jdk17
                     COPY target/${ARTIFACT_ID}-${VERSION}.war /usr/local/tomcat/webapps/
                     EXPOSE ${PORT}
+                    RUN sed -i 's/port="8080"/port="'${PORT}'"/' /usr/local/tomcat/conf/server.xml
                     CMD ["catalina.sh", "run"]
                 """
                 sh """
